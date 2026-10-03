@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview 2 Generator</title>
+<style>
+:root {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --border: #e7e5e4;
+  --border-strong: #d6d3d1;
+  --text: #1c1917;
+  --muted: #57534e;
+  --accent: #0f766e;
+  --accent-hover: #115e59;
+  --accent-soft: #f0fdfa;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --danger-border: #fecaca;
+  --ok: #15803d;
+  --ok-soft: #f0fdf4;
+  --ok-border: #bbf7d0;
+  --warn: #b45309;
+  --warn-soft: #fffbeb;
+  --warn-border: #fde68a;
+  --radius: 8px;
+  --tap: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+header { margin-bottom: 20px; }
+h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+}
+header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.drop-zone {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  min-height: var(--tap);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.drop-zone:hover { border-color: var(--accent); background: var(--accent-soft); }
+.drop-zone:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.drop-zone strong { font-weight: 500; }
+.drop-zone span { color: var(--muted); font-size: 0.85rem; }
+.file-info {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+.file-info > div { margin-bottom: 4px; }
+.file-info > div:last-child { margin-bottom: 0; }
+.file-info strong { word-break: break-all; font-weight: 500; }
+.field {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+label {
+  font-size: 0.875rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+input[type="text"] {
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+  min-height: var(--tap);
+}
+input[type="text"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+button {
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 12px 20px;
+  min-height: var(--tap);
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.15s ease;
+}
+button:hover:not(:disabled) { background: var(--accent-hover); }
+button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+button:disabled {
+  background: var(--border);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.progress-wrap { margin-top: 16px; }
+.progress-track {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.2s ease;
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.status {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  word-break: break-word;
+}
+.status[data-kind="error"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+.status[data-kind="ok"] {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: var(--ok-border);
+}
+.status[data-kind="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn-border);
+}
+details {
+  margin-top: 16px;
+  font-size: 0.875rem;
+}
+summary {
+  cursor: pointer;
+  padding: 8px 0;
+  color: var(--muted);
+  user-select: none;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+}
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+pre.log {
+  background: #1c1917;
+  color: #e7e5e4;
+  padding: 12px;
+  border-radius: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 8px 0 0;
+}
+.warn-text { color: var(--warn); font-weight: 500; }
+.footnote {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.footnote p { margin: 0 0 10px; }
+.footnote p:last-child { margin-bottom: 0; }
+.footnote strong { color: var(--text); font-weight: 500; }
+.footnote code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.75rem;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (max-width: 480px) {
+  .wrap { padding: 16px 12px 48px; }
+  h1 { font-size: 1.2rem; }
+  .card { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Preview 2 Generator</h1>
+    <p>Every 1 second of input becomes 4 seconds: Normal, Mari Group, Not Scary mirror, Mari Group.</p>
+  </header>
+
+  <div class="card">
+    <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Choose a video file">
+      <strong>Choose a video file</strong>
+      <span>or drag and drop</span>
+    </div>
+    <input type="file" id="file-input" accept="video/*" hidden>
+
+    <div id="file-info" class="file-info" hidden></div>
+
+    <div class="field">
+      <label for="output-name">Output filename</label>
+      <input type="text" id="output-name" placeholder="output_preview2.mp4" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="field">
+      <button id="generate-btn" type="button" disabled>Generate Preview 2</button>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap" hidden>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-label">
+        <span id="progress-stage">Starting</span>
+        <span id="progress-percent">0%</span>
+      </div>
+    </div>
+
+    <div class="status" id="status" data-kind="info" role="status" aria-live="polite">Load a video to begin.</div>
+
+    <details>
+      <summary>Processing log</summary>
+      <pre class="log" id="log"></pre>
+    </details>
+  </div>
+
+  <div class="footnote">
+    <p><strong>How it works.</strong> The video is processed in 10-second batches by FFmpeg running inside WebAssembly, entirely in your browser. The Mari Group and Not Scary treatments are native-filter approximations of the named effects. Pitch changes by track: none, +1 semitone, -2 semitones, +1 semitone.</p>
+    <p><strong>Limitations.</strong> Browser FFmpeg is single-threaded and keeps everything in memory. Long videos or files over about 100 MB may fail or run very slowly. For heavy work, run the desktop FFmpeg version instead.</p>
+    <p><strong>First load.</strong> The FFmpeg core is about 25 MB and is fetched from jsDelivr on the first run, then cached by the browser. Subsequent runs are fast.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const PITCH_SEMITONES = [0, 1, -2, 1];
+const VIDEO_FILTER_CHAINS = ["null", "hue=h=52", null, "hue=h=52"];
+const BATCH_LENGTH = 10.0;
+const SLICE_LENGTH = 1.0;
+const SAMPLE_RATE = 48000;
+
+const state = {
+  file: null,
+  duration: 0,
+  ffmpeg: null,
+  ffmpegLoaded: false,
+  running: false,
+  logBuffer: [],
+};
+
+const el = {
+  dropZone: document.getElementById("drop-zone"),
+  fileInput: document.getElementById("file-input"),
+  fileInfo: document.getElementById("file-info"),
+  outputName: document.getElementById("output-name"),
+  generateBtn: document.getElementById("generate-btn"),
+  progressWrap: document.getElementById("progress-wrap"),
+  progressBar: document.getElementById("progress-bar"),
+  progressFill: document.getElementById("progress-fill"),
+  progressStage: document.getElementById("progress-stage"),
+  progressPercent: document.getElementById("progress-percent"),
+  status: document.getElementById("status"),
+  log: document.getElementById("log"),
+};
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+function formatDuration(seconds) {
+  if (!isFinite(seconds) || seconds < 0) return "unknown";
+  const total = Math.floor(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) return h + "h " + m + "m " + s + "s";
+  if (m > 0) return m + "m " + s + "s";
+  return s + "s";
+}
+
+function setStatus(text, kind) {
+  el.status.textContent = text;
+  el.status.dataset.kind = kind || "info";
+}
+
+function logLine(text) {
+  state.logBuffer.push(text);
+  if (state.logBuffer.length > 600) state.logBuffer.shift();
+  el.log.textContent = state.logBuffer.join("\n");
+  el.log.scrollTop = el.log.scrollHeight;
+}
+
+function updateProgress(percent, stage) {
+  const p = Math.max(0, Math.min(100, percent));
+  el.progressFill.style.width = p + "%";
+  el.progressPercent.textContent = Math.round(p) + "%";
+  el.progressBar.setAttribute("aria-valuenow", String(Math.round(p)));
+  if (stage) el.progressStage.textContent = stage;
+}
+
+function openFilePicker() {
+  if (!state.running) el.fileInput.click();
+}
+
+el.dropZone.addEventListener("click", openFilePicker);
+el.dropZone.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+    e.preventDefault();
+    openFilePicker();
+  }
+});
+el.dropZone.addEventListener("dragover", function (e) {
+  e.preventDefault();
+  el.dropZone.classList.add("drag-over");
+});
+el.dropZone.addEventListener("dragleave", function () {
+  el.dropZone.classList.remove("drag-over");
+});
+el.dropZone.addEventListener("drop", function (e) {
+  e.preventDefault();
+  el.dropZone.classList.remove("drag-over");
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+    handleFile(e.dataTransfer.files[0]);
+  }
+});
+el.fileInput.addEventListener("change", function (e) {
+  if (e.target.files && e.target.files.length) {
+    handleFile(e.target.files[0]);
+  }
+});
+
+async function handleFile(file) {
+  if (!file.type || file.type.indexOf("video/") !== 0) {
+    setStatus("That file does not look like a video.", "error");
+    return;
+  }
+  state.file = file;
+  el.outputName.value = file.name.replace(/\.[^.]+$/, "") + "_preview2.mp4";
+
+  setStatus("Reading metadata...", "info");
+  state.duration = 0;
+  try {
+    state.duration = await getVideoDuration(file);
+  } catch (err) {
+    state.duration = 0;
+  }
+
+  const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+  const durStr = state.duration ? formatDuration(state.duration) : "could not read";
+  const outDur = state.duration ? formatDuration(state.duration * 4) : "unknown";
+  const sizeWarn = file.size > 100 * 1024 * 1024
+    ? '<div class="warn-text">Large file. Browser processing may run out of memory. The desktop version is safer for this.</div>'
+    : "";
+
+  el.fileInfo.innerHTML =
+    "<div><strong>" + escapeHtml(file.name) + "</strong></div>" +
+    "<div>Size: " + sizeMB + " MB</div>" +
+    "<div>Input duration: " + durStr + "</div>" +
+    "<div>Expected output: " + outDur + "</div>" +
+    sizeWarn;
+  el.fileInfo.hidden = false;
+  el.generateBtn.disabled = !state.duration;
+
+  if (state.duration) {
+    setStatus("Ready to generate.", "ok");
+  } else {
+    setStatus("Could not read the video duration. The file may be corrupt or unsupported.", "error");
+  }
+}
+
+function getVideoDuration(file) {
+  return new Promise(function (resolve, reject) {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    const cleanup = function () { URL.revokeObjectURL(url); };
+    v.onloadedmetadata = function () {
+      const d = v.duration;
+      cleanup();
+      if (!isFinite(d) || d <= 0) reject(new Error("invalid duration"));
+      else resolve(d);
+    };
+    v.onerror = function () {
+      cleanup();
+      reject(new Error("video metadata error"));
+    };
+    v.src = url;
+  });
+}
+
+async function loadFFmpeg() {
+  if (state.ffmpegLoaded) return state.ffmpeg;
+
+  setStatus("Loading FFmpeg core. About 25 MB, first run only.", "info");
+  logLine("Loading ffmpeg.wasm modules...");
+
+  const mods = await Promise.all([
+    import("https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"),
+    import("https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js"),
+  ]);
+  const FFmpeg = mods[0].FFmpeg;
+  const toBlobURL = mods[1].toBlobURL;
+
+  const ffmpeg = new FFmpeg();
+
+  ffmpeg.on("log", function (payload) {
+    handleFFmpegLog(payload.message);
+  });
+
+  const coreBase = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
+  logLine("Fetching ffmpeg-core.js and ffmpeg-core.wasm...");
+  const coreURL = await toBlobURL(coreBase + "/ffmpeg-core.js", "text/javascript");
+  const wasmURL = await toBlobURL(coreBase + "/ffmpeg-core.wasm", "application/wasm");
+
+  logLine("Initializing FFmpeg runtime...");
+  await ffmpeg.load({ coreURL: coreURL, wasmURL: wasmURL });
+
+  state.ffmpeg = ffmpeg;
+  state.ffmpegLoaded = true;
+  logLine("FFmpeg core loaded.");
+  return ffmpeg;
+}
+
+let currentBatch = null;
+
+function handleFFmpegLog(line) {
+  logLine(line);
+  if (!currentBatch) return;
+  const m = line.match(/time=(\d+):(\d+):(\d+\.?\d*)/);
+  if (!m) return;
+  const seconds = parseInt(m[1], 10) * 3600 + parseInt(m[2], 10) * 60 + parseFloat(m[3]);
+  const expectedOut = currentBatch.duration * 4.0;
+  if (expectedOut <= 0) return;
+  const inBatch = Math.max(0, Math.min(100, (seconds / expectedOut) * 100));
+  const overall = currentBatch.basePercent + (inBatch / 100) * currentBatch.sizePercent;
+  updateProgress(overall, "Batch " + (currentBatch.index + 1) + " of " + currentBatch.total);
+}
+
+function semitonesToRatio(semitones) {
+  return Math.pow(2, semitones / 12.0);
+}
+
+function buildPitchChain(semitones) {
+  if (semitones === 0) return "anull";
+  const ratio = semitonesToRatio(semitones);
+  const shifted = SAMPLE_RATE * ratio;
+  const tempo = 1 / ratio;
+  return "aresample=" + SAMPLE_RATE +
+    ",asetrate=" + shifted.toFixed(3) +
+    ",aresample=" + SAMPLE_RATE +
+    ",atempo=" + tempo.toFixed(6);
+}
+
+function buildBatchFilterGraph(batchDuration) {
+  const graph = [];
+  const videoParts = [];
+  const audioParts = [];
+  const sliceCount = Math.ceil(batchDuration / SLICE_LENGTH);
+
+  for (let i = 0; i < sliceCount; i++) {
+    const start = i * SLICE_LENGTH;
+    const end = Math.min(start + SLICE_LENGTH, batchDuration);
+    const dur = end - start;
+    if (dur <= 0) continue;
+
+    const videoBase = "vb" + i;
+    graph.push(
+      "[0:v]trim=start=" + start.toFixed(6) + ":end=" + end.toFixed(6) +
+      ",setpts=PTS-STARTPTS[" + videoBase + "]"
+    );
+
+    const videoSplits = [0, 1, 2, 3].map(function (v) { return "[v" + i + "_" + v + "]"; }).join("");
+    graph.push("[" + videoBase + "]split=4" + videoSplits);
+
+    for (let variant = 0; variant < 4; variant++) {
+      const out = "vp" + i + "_" + variant;
+
+      if (variant === 2) {
+        const base = "mir" + i + "_" + variant;
+        graph.push("[v" + i + "_" + variant + "]hue=h=180,split=2[" + base + "_a][" + base + "_b]");
+
+        if (i % 2 === 0) {
+          graph.push("[" + base + "_a]crop=iw/2:ih:0:0,setpts=PTS-STARTPTS[" + base + "_l]");
+          graph.push("[" + base + "_b]crop=iw/2:ih:0:0,hflip,setpts=PTS-STARTPTS[" + base + "_r]");
+        } else {
+          graph.push("[" + base + "_a]crop=iw/2:ih:iw/2:0,setpts=PTS-STARTPTS[" + base + "_r]");
+          graph.push("[" + base + "_b]crop=iw/2:ih:iw/2:0,hflip,setpts=PTS-STARTPTS[" + base + "_l]");
+        }
+
+        graph.push("[" + base + "_l][" + base + "_r]hstack[" + out + "]");
+      } else {
+        const chain = VIDEO_FILTER_CHAINS[variant] || "null";
+        graph.push("[v" + i + "_" + variant + "]" + chain + "[" + out + "]");
+      }
+
+      videoParts.push(out);
+    }
+
+    const audioBase = "ab" + i;
+    graph.push(
+      "[0:a]atrim=start=" + start.toFixed(6) + ":end=" + end.toFixed(6) +
+      ",asetpts=PTS-STARTPTS[" + audioBase + "]"
+    );
+
+    const audioSplits = [0, 1, 2, 3].map(function (v) { return "[a" + i + "_" + v + "]"; }).join("");
+    graph.push("[" + audioBase + "]asplit=4" + audioSplits);
+
+    for (let variant = 0; variant < 4; variant++) {
+      const inputName = "a" + i + "_" + variant;
+      const outName = "ap" + i + "_" + variant;
+      const chain = buildPitchChain(PITCH_SEMITONES[variant]);
+      graph.push("[" + inputName + "]" + chain + "[" + outName + "]");
+      audioParts.push(outName);
+    }
+  }
+
+  const vIn = videoParts.map(function (n) { return "[" + n + "]"; }).join("");
+  graph.push(vIn + "concat=n=" + videoParts.length + ":v=1:a=0[vout]");
+
+  const aIn = audioParts.map(function (n) { return "[" + n + "]"; }).join("");
+  graph.push(aIn + "concat=n=" + audioParts.length + ":v=0:a=1[aout]");
+
+  return graph.join(";\n");
+}
+
+async function generate() {
+  if (state.running) return;
+  if (!state.file || !state.duration) {
+    setStatus("Load a video file first.", "error");
+    return;
+  }
+
+  const outputName = (el.outputName.value.trim() || "output_preview2.mp4");
+  const safeName = outputName.replace(/[\\/:*?"<>|]/g, "_");
+
+  state.running = true;
+  el.generateBtn.disabled = true;
+  el.progressWrap.hidden = false;
+  updateProgress(0, "Loading FFmpeg");
+  logLine("=== Run started ===");
+
+  try {
+    const ffmpeg = await loadFFmpeg();
+
+    setStatus("Copying input into browser memory...", "info");
+    logLine("Reading input file into memory...");
+    const inputBuffer = await state.file.arrayBuffer();
+    const inputData = new Uint8Array(inputBuffer);
+    await ffmpeg.writeFile("input.bin", inputData);
+    logLine("Input written: " + inputData.length + " bytes");
+
+    const totalDuration = state.duration;
+    const batchCount = Math.ceil(totalDuration / BATCH_LENGTH);
+    const batchOutputs = [];
+
+    for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+      const batchStart = batchIndex * BATCH_LENGTH;
+      const batchDuration = Math.min(BATCH_LENGTH, totalDuration - batchStart);
+      const basePercent = (batchIndex / batchCount) * 100;
+      const sizePercent = 100 / batchCount;
+
+      currentBatch = {
+        index: batchIndex,
+        total: batchCount,
+        basePercent: basePercent,
+        sizePercent: sizePercent,
+        duration: batchDuration,
+      };
+
+      updateProgress(basePercent, "Batch " + (batchIndex + 1) + " of " + batchCount);
+      setStatus(
+        "Processing batch " + (batchIndex + 1) + " of " + batchCount +
+        " (" + batchStart.toFixed(0) + "s to " + (batchStart + batchDuration).toFixed(0) + "s)...",
+        "info"
+      );
+
+      const filterGraph = buildBatchFilterGraph(batchDuration);
+      logLine("Batch " + (batchIndex + 1) + ": filter graph built, " + filterGraph.length + " chars");
+
+      const outName = "batch_" + String(batchIndex).padStart(4, "0") + ".mp4";
+
+      await ffmpeg.exec([
+        "-ss", batchStart.toFixed(6),
+        "-t", batchDuration.toFixed(6),
+        "-i", "input.bin",
+        "-filter_complex", filterGraph,
+        "-map", "[vout]",
+        "-map", "[aout]",
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "23",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-ar", String(SAMPLE_RATE),
+        "-ac", "2",
+        "-movflags", "+faststart",
+        outName,
+      ]);
+
+      batchOutputs.push(outName);
+      logLine("Batch " + (batchIndex + 1) + " complete.");
+    }
+
+    currentBatch = null;
+
+    updateProgress(95, "Combining batches");
+    setStatus("Combining output batches...", "info");
+
+    const listContent = batchOutputs.map(function (n) { return "file '" + n + "'"; }).join("\n") + "\n";
+    await ffmpeg.writeFile("list.txt", new TextEncoder().encode(listContent));
+
+    await ffmpeg.exec([
+      "-f", "concat",
+      "-safe", "0",
+      "-i", "list.txt",
+      "-c", "copy",
+      "-movflags", "+faststart",
+      "output.mp4",
+    ]);
+
+    logLine("Concatenation complete.");
+
+    updateProgress(99, "Reading result");
+    setStatus("Reading output file...", "info");
+    const out = await ffmpeg.readFile("output.mp4");
+    const blob = new Blob([out], { type: "video/mp4" });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = safeName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+
+    updateProgress(100, "Done");
+    const sizeMB = (blob.size / (1024 * 1024)).toFixed(1);
+    setStatus("Done. " + safeName + " (" + sizeMB + " MB) saved to your downloads.", "ok");
+    logLine("=== Run finished: " + safeName + " (" + sizeMB + " MB) ===");
+
+    try {
+      await ffmpeg.deleteFile("input.bin");
+      for (let k = 0; k < batchOutputs.length; k++) {
+        await ffmpeg.deleteFile(batchOutputs[k]);
+      }
+      await ffmpeg.deleteFile("list.txt");
+      await ffmpeg.deleteFile("output.mp4");
+      logLine("Workspace cleared.");
+    } catch (cleanupErr) {
+      logLine("Cleanup warning: " + (cleanupErr && cleanupErr.message ? cleanupErr.message : String(cleanupErr)));
+    }
+
+  } catch (err) {
+    const msg = err && err.message ? err.message : String(err);
+    console.error(err);
+    logLine("ERROR: " + msg);
+    setStatus("Failed: " + msg, "error");
+    updateProgress(0, "Failed");
+  } finally {
+    state.running = false;
+    currentBatch = null;
+    el.generateBtn.disabled = false;
+  }
+}
+
+el.generateBtn.addEventListener("click", generate);
+
+if (location.protocol === "file:") {
+  setStatus(
+    "This page must be served over http:// or https:// so FFmpeg can load. On GitHub Pages this is automatic. For local testing, run a small web server in this folder.",
+    "warn"
+  );
+}
+</script>
+</body>
+</html>
