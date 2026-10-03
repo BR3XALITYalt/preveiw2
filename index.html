@@ -484,12 +484,20 @@ async function loadFFmpeg() {
   });
 
   const coreBase = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
+
+  // The class worker MUST be same-origin. Point it at the local file.
+  const classWorkerURL = new URL("ffmpeg-worker.js", window.location.href).href;
+
   logLine("Fetching ffmpeg-core.js and ffmpeg-core.wasm...");
   const coreURL = await toBlobURL(coreBase + "/ffmpeg-core.js", "text/javascript");
   const wasmURL = await toBlobURL(coreBase + "/ffmpeg-core.wasm", "application/wasm");
 
   logLine("Initializing FFmpeg runtime...");
-  await ffmpeg.load({ coreURL: coreURL, wasmURL: wasmURL });
+  await ffmpeg.load({
+    coreURL: coreURL,
+    wasmURL: wasmURL,
+    classWorkerURL: classWorkerURL,
+  });
 
   state.ffmpeg = ffmpeg;
   state.ffmpegLoaded = true;
